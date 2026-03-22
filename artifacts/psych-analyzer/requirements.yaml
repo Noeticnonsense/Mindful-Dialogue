@@ -1,0 +1,14 @@
+packages:
+  "framer-motion": "For smooth layout transitions and staggered list animations"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility for merging tailwind classes safely"
+  "lucide-react": "For beautiful, consistent iconography across the dashboard"
+
+images:
+  - path: "artifacts/psych-analyzer/public/images/abstract-clinical-bg.png"
+    description: "Soft, abstract gradient mesh in muted teal, sage, and pale slate. Extremely subtle and calming, professional clinical psychology aesthetic, blurred light leaks."
+    aspect_ratio: "16:9"
+
+notes:
+  - "Assuming the backend might not be fully functional yet; implementing a graceful fallback to rich mock data on API failure so the UI can be reviewed."
+  - "Relying on @workspace/api-client-react for TanStack Query hooks based on OpenAPI spec."

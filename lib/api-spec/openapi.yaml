@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: analyze
+    description: Conversation analysis operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,37 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /analyze:
+    post:
+      operationId: analyzeConversation
+      tags: [analyze]
+      summary: Analyze a conversation
+      description: Sends conversation text to AI and returns structured psychological analysis
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalyzeRequest"
+      responses:
+        "200":
+          description: Analysis result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalysisResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +66,270 @@ components:
           type: string
       required:
         - status
-
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: string
+        detail:
+          type: string
+      required:
+        - error
+    AnalyzeRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          description: The conversation text to analyze
+        title:
+          type: string
+          description: Optional title for the analysis
+      required:
+        - text
+    ParsedMessage:
+      type: object
+      properties:
+        id:
+          type: string
+        speaker:
+          type: string
+        rawSpeaker:
+          type: string
+        text:
+          type: string
+        turn:
+          type: number
+        timestamp:
+          type: string
+          nullable: true
+      required:
+        - id
+        - speaker
+        - rawSpeaker
+        - text
+        - turn
+        - timestamp
+    Party:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        messageCount:
+          type: number
+        dominantStates:
+          type: array
+          items:
+            type: string
+        stateConfidence:
+          type: number
+        notes:
+          type: string
+      required:
+        - id
+        - name
+        - messageCount
+        - dominantStates
+        - stateConfidence
+        - notes
+    PatternEvidence:
+      type: object
+      properties:
+        speaker:
+          type: string
+        turn:
+          type: number
+        quote:
+          type: string
+      required:
+        - speaker
+        - turn
+        - quote
+    DetectedPattern:
+      type: object
+      properties:
+        label:
+          type: string
+        description:
+          type: string
+        branch:
+          type: string
+        evidence:
+          type: array
+          items:
+            $ref: "#/components/schemas/PatternEvidence"
+        confidence:
+          type: number
+        caution:
+          type: string
+      required:
+        - label
+        - description
+        - branch
+        - evidence
+        - confidence
+        - caution
+    EmotionalStep:
+      type: object
+      properties:
+        speaker:
+          type: string
+        turn:
+          type: number
+        state:
+          type: string
+        confidence:
+          type: number
+        rationale:
+          type: string
+      required:
+        - speaker
+        - turn
+        - state
+        - confidence
+        - rationale
+    ReplySuggestions:
+      type: object
+      properties:
+        gentle:
+          type: string
+        assertive:
+          type: string
+        boundaryFocused:
+          type: string
+        deEscalating:
+          type: string
+        pauseInstead:
+          type: string
+      required:
+        - gentle
+        - assertive
+        - boundaryFocused
+        - deEscalating
+        - pauseInstead
+    ReflectionMessage:
+      type: object
+      properties:
+        targetSpeaker:
+          type: string
+        message:
+          type: string
+      required:
+        - targetSpeaker
+        - message
+    ToneScores:
+      type: object
+      properties:
+        authentic:
+          type: number
+        defensive:
+          type: number
+        supportive:
+          type: number
+        pressureSignals:
+          type: number
+        inconsistencySignals:
+          type: number
+      required:
+        - authentic
+        - defensive
+        - supportive
+        - pressureSignals
+        - inconsistencySignals
+    AnalysisMeta:
+      type: object
+      properties:
+        title:
+          type: string
+        disclaimer:
+          type: string
+        savedRawText:
+          type: boolean
+        redactionApplied:
+          type: boolean
+        generatedAt:
+          type: string
+      required:
+        - title
+        - disclaimer
+        - savedRawText
+        - redactionApplied
+        - generatedAt
+    AnalysisInput:
+      type: object
+      properties:
+        originalLength:
+          type: number
+        normalizedLength:
+          type: number
+        detectedSpeakers:
+          type: array
+          items:
+            type: string
+        uncertainSpeakerAssignments:
+          type: boolean
+      required:
+        - originalLength
+        - normalizedLength
+        - detectedSpeakers
+        - uncertainSpeakerAssignments
+    AnalysisSafety:
+      type: object
+      properties:
+        confidenceNote:
+          type: string
+        misusePrevention:
+          type: array
+          items:
+            type: string
+      required:
+        - confidenceNote
+        - misusePrevention
+    AnalysisResponse:
+      type: object
+      properties:
+        meta:
+          $ref: "#/components/schemas/AnalysisMeta"
+        input:
+          $ref: "#/components/schemas/AnalysisInput"
+        parsedConversation:
+          type: array
+          items:
+            $ref: "#/components/schemas/ParsedMessage"
+        parties:
+          type: array
+          items:
+            $ref: "#/components/schemas/Party"
+        conversationSummary:
+          type: string
+        toneScores:
+          $ref: "#/components/schemas/ToneScores"
+        patterns:
+          type: array
+          items:
+            $ref: "#/components/schemas/DetectedPattern"
+        emotionalProgression:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmotionalStep"
+        replySuggestions:
+          $ref: "#/components/schemas/ReplySuggestions"
+        reflectionMessages:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReflectionMessage"
+        safety:
+          $ref: "#/components/schemas/AnalysisSafety"
+      required:
+        - meta
+        - input
+        - parsedConversation
+        - parties
+        - conversationSummary
+        - toneScores
+        - patterns
+        - emotionalProgression
+        - replySuggestions
+        - reflectionMessages
+        - safety

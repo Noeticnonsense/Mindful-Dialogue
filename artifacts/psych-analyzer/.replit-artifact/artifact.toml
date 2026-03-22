@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Psychology Conversation Analyzer"
+version = "1.0.0"
+id = "artifacts/psych-analyzer"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19443
+
+[services.development]
+run = "pnpm --filter @workspace/psych-analyzer run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/psych-analyzer", "run", "build" ]
+publicDir = "artifacts/psych-analyzer/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19443"
+BASE_PATH = "/"

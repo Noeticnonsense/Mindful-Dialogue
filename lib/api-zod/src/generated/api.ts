@@ -14,3 +14,98 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * Sends conversation text to AI and returns structured psychological analysis
+ * @summary Analyze a conversation
+ */
+export const AnalyzeConversationBody = zod.object({
+  text: zod.string().describe("The conversation text to analyze"),
+  title: zod.string().optional().describe("Optional title for the analysis"),
+});
+
+export const AnalyzeConversationResponse = zod.object({
+  meta: zod.object({
+    title: zod.string(),
+    disclaimer: zod.string(),
+    savedRawText: zod.boolean(),
+    redactionApplied: zod.boolean(),
+    generatedAt: zod.string(),
+  }),
+  input: zod.object({
+    originalLength: zod.number(),
+    normalizedLength: zod.number(),
+    detectedSpeakers: zod.array(zod.string()),
+    uncertainSpeakerAssignments: zod.boolean(),
+  }),
+  parsedConversation: zod.array(
+    zod.object({
+      id: zod.string(),
+      speaker: zod.string(),
+      rawSpeaker: zod.string(),
+      text: zod.string(),
+      turn: zod.number(),
+      timestamp: zod.string().nullable(),
+    }),
+  ),
+  parties: zod.array(
+    zod.object({
+      id: zod.string(),
+      name: zod.string(),
+      messageCount: zod.number(),
+      dominantStates: zod.array(zod.string()),
+      stateConfidence: zod.number(),
+      notes: zod.string(),
+    }),
+  ),
+  conversationSummary: zod.string(),
+  toneScores: zod.object({
+    authentic: zod.number(),
+    defensive: zod.number(),
+    supportive: zod.number(),
+    pressureSignals: zod.number(),
+    inconsistencySignals: zod.number(),
+  }),
+  patterns: zod.array(
+    zod.object({
+      label: zod.string(),
+      description: zod.string(),
+      branch: zod.string(),
+      evidence: zod.array(
+        zod.object({
+          speaker: zod.string(),
+          turn: zod.number(),
+          quote: zod.string(),
+        }),
+      ),
+      confidence: zod.number(),
+      caution: zod.string(),
+    }),
+  ),
+  emotionalProgression: zod.array(
+    zod.object({
+      speaker: zod.string(),
+      turn: zod.number(),
+      state: zod.string(),
+      confidence: zod.number(),
+      rationale: zod.string(),
+    }),
+  ),
+  replySuggestions: zod.object({
+    gentle: zod.string(),
+    assertive: zod.string(),
+    boundaryFocused: zod.string(),
+    deEscalating: zod.string(),
+    pauseInstead: zod.string(),
+  }),
+  reflectionMessages: zod.array(
+    zod.object({
+      targetSpeaker: zod.string(),
+      message: zod.string(),
+    }),
+  ),
+  safety: zod.object({
+    confidenceNote: zod.string(),
+    misusePrevention: zod.array(zod.string()),
+  }),
+});

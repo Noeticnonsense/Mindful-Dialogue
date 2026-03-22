@@ -6,4 +6,18 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./analysisInput";
+export * from "./analysisMeta";
+export * from "./analysisResponse";
+export * from "./analysisSafety";
+export * from "./analyzeRequest";
+export * from "./apiError";
+export * from "./detectedPattern";
+export * from "./emotionalStep";
 export * from "./healthStatus";
+export * from "./parsedMessage";
+export * from "./party";
+export * from "./patternEvidence";
+export * from "./reflectionMessage";
+export * from "./replySuggestions";
+export * from "./toneScores";

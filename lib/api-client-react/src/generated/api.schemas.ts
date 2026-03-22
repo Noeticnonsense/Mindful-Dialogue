@@ -8,3 +8,111 @@
 export interface HealthStatus {
   status: string;
 }
+
+export interface ApiError {
+  error: string;
+  detail?: string;
+}
+
+export interface AnalyzeRequest {
+  /** The conversation text to analyze */
+  text: string;
+  /** Optional title for the analysis */
+  title?: string;
+}
+
+export interface ParsedMessage {
+  id: string;
+  speaker: string;
+  rawSpeaker: string;
+  text: string;
+  turn: number;
+  timestamp: string | null;
+}
+
+export interface Party {
+  id: string;
+  name: string;
+  messageCount: number;
+  dominantStates: string[];
+  stateConfidence: number;
+  notes: string;
+}
+
+export interface PatternEvidence {
+  speaker: string;
+  turn: number;
+  quote: string;
+}
+
+export interface DetectedPattern {
+  label: string;
+  description: string;
+  branch: string;
+  evidence: PatternEvidence[];
+  confidence: number;
+  caution: string;
+}
+
+export interface EmotionalStep {
+  speaker: string;
+  turn: number;
+  state: string;
+  confidence: number;
+  rationale: string;
+}
+
+export interface ReplySuggestions {
+  gentle: string;
+  assertive: string;
+  boundaryFocused: string;
+  deEscalating: string;
+  pauseInstead: string;
+}
+
+export interface ReflectionMessage {
+  targetSpeaker: string;
+  message: string;
+}
+
+export interface ToneScores {
+  authentic: number;
+  defensive: number;
+  supportive: number;
+  pressureSignals: number;
+  inconsistencySignals: number;
+}
+
+export interface AnalysisMeta {
+  title: string;
+  disclaimer: string;
+  savedRawText: boolean;
+  redactionApplied: boolean;
+  generatedAt: string;
+}
+
+export interface AnalysisInput {
+  originalLength: number;
+  normalizedLength: number;
+  detectedSpeakers: string[];
+  uncertainSpeakerAssignments: boolean;
+}
+
+export interface AnalysisSafety {
+  confidenceNote: string;
+  misusePrevention: string[];
+}
+
+export interface AnalysisResponse {
+  meta: AnalysisMeta;
+  input: AnalysisInput;
+  parsedConversation: ParsedMessage[];
+  parties: Party[];
+  conversationSummary: string;
+  toneScores: ToneScores;
+  patterns: DetectedPattern[];
+  emotionalProgression: EmotionalStep[];
+  replySuggestions: ReplySuggestions;
+  reflectionMessages: ReflectionMessage[];
+  safety: AnalysisSafety;
+}
