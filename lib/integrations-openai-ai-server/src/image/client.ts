@@ -19,6 +19,14 @@ export const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
 
+function getImageBase64(response: { data?: Array<{ b64_json?: string }> }): string {
+  const base64 = response.data?.[0]?.b64_json;
+  if (!base64) {
+    throw new Error("OpenAI image response did not include base64 image data");
+  }
+  return base64;
+}
+
 export async function generateImageBuffer(
   prompt: string,
   size: "1024x1024" | "512x512" | "256x256" = "1024x1024"
@@ -28,7 +36,7 @@ export async function generateImageBuffer(
     prompt,
     size,
   });
-  const base64 = response.data[0]?.b64_json ?? "";
+  const base64 = getImageBase64(response);
   return Buffer.from(base64, "base64");
 }
 
@@ -51,7 +59,7 @@ export async function editImages(
     prompt,
   });
 
-  const imageBase64 = response.data[0]?.b64_json ?? "";
+  const imageBase64 = getImageBase64(response);
   const imageBytes = Buffer.from(imageBase64, "base64");
 
   if (outputPath) {
