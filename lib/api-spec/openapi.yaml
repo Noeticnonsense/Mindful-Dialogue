@@ -84,6 +84,14 @@ components:
         title:
           type: string
           description: Optional title for the analysis
+        partyNames:
+          type: array
+          description: Names for the two conversation participants, used when assigning unlabeled or generic speaker lines
+          items:
+            type: string
+            minLength: 1
+          minItems: 2
+          maxItems: 2
       required:
         - text
     ParsedMessage:

@@ -85,6 +85,32 @@ function canonicalizeSpeakerName(name: string): string {
     .replace(/\s+/g, " ");
 }
 
+function normalizePartyNames(input: unknown): [string, string] | undefined {
+  if (!Array.isArray(input)) return undefined;
+  const names = input.map((name) => String(name).trim()).filter(Boolean);
+  return names.length >= 2 ? [names[0], names[1]] : undefined;
+}
+
+function resolveSpeakerLabel(label: string, partyNames?: [string, string]): string {
+  const canonicalLabel = canonicalizeSpeakerName(label);
+  if (!partyNames) return canonicalLabel;
+
+  const genericLabels = new Map([
+    ["speaker a", partyNames[0]],
+    ["speaker 1", partyNames[0]],
+    ["person 1", partyNames[0]],
+    ["party 1", partyNames[0]],
+    ["me", partyNames[0]],
+    ["speaker b", partyNames[1]],
+    ["speaker 2", partyNames[1]],
+    ["person 2", partyNames[1]],
+    ["party 2", partyNames[1]],
+    ["you", partyNames[1]],
+  ]);
+
+  return genericLabels.get(canonicalLabel.toLowerCase()) || canonicalLabel;
+}
+
 function mergeWrappedLines(messages: ParsedMessage[]): ParsedMessage[] {
   if (!messages.length) return [];
   const merged: ParsedMessage[] = [];
@@ -107,7 +133,7 @@ function mergeWrappedLines(messages: ParsedMessage[]): ParsedMessage[] {
   return merged.map((m, index) => ({ ...m, turn: index + 1, id: `m_${index + 1}` }));
 }
 
-function parseConversation(text: string): ParsedMessage[] {
+function parseConversation(text: string, partyNames?: [string, string]): ParsedMessage[] {
   const lines = text
     .split(/\n+/)
     .map((line) => line.trim())
@@ -124,10 +150,11 @@ function parseConversation(text: string): ParsedMessage[] {
 
     const speakerMatch = cleanedLine.match(/^([^:]{1,50}):\s*(.+)$/);
     if (speakerMatch) {
+      const rawSpeaker = speakerMatch[1].trim();
       messages.push({
         id: `m_${turn}`,
-        speaker: canonicalizeSpeakerName(speakerMatch[1]),
-        rawSpeaker: speakerMatch[1].trim(),
+        speaker: resolveSpeakerLabel(rawSpeaker, partyNames),
+        rawSpeaker,
         text: speakerMatch[2].trim(),
         turn,
         timestamp,
@@ -136,7 +163,8 @@ function parseConversation(text: string): ParsedMessage[] {
       continue;
     }
 
-    const speaker = fallbackIndex % 2 === 0 ? "Speaker A" : "Speaker B";
+    const fallbackNames = partyNames || ["Speaker A", "Speaker B"];
+    const speaker = fallbackNames[fallbackIndex % 2];
     messages.push({
       id: `m_${turn}`,
       speaker,
@@ -163,25 +191,20 @@ function normalizeParties(input: unknown, parsedConversation: ParsedMessage[]) {
     return acc;
   }, {});
 
-  if (!Array.isArray(input) || !input.length) {
-    return Object.entries(defaultCounts).map(([name, count], index) => ({
-      id: String.fromCharCode(65 + index),
-      name,
-      messageCount: count,
-      dominantStates: ["unclear"],
-      stateConfidence: 0,
-      notes: "No model-enriched speaker profile available.",
-    }));
-  }
+  const speakers = Object.keys(defaultCounts);
+  const modelParties = Array.isArray(input) ? input : [];
 
-  return input.map((party: Record<string, unknown>, index: number) => ({
-    id: String(party?.id || String.fromCharCode(65 + index)),
-    name: String(party?.name || `Speaker ${index + 1}`),
-    messageCount: Number(party?.messageCount || defaultCounts[String(party?.name)] || 0),
-    dominantStates: Array.isArray(party?.dominantStates) ? party.dominantStates.map(String) : ["unclear"],
-    stateConfidence: clamp01(Number(party?.stateConfidence || 0)),
-    notes: String(party?.notes || ""),
-  }));
+  return speakers.map((name, index) => {
+    const party = (modelParties[index] || {}) as Record<string, unknown>;
+    return {
+      id: String(party?.id || String.fromCharCode(65 + index)),
+      name,
+      messageCount: defaultCounts[name],
+      dominantStates: Array.isArray(party?.dominantStates) ? party.dominantStates.map(String) : ["unclear"],
+      stateConfidence: clamp01(Number(party?.stateConfidence || 0)),
+      notes: String(party?.notes || "No model-enriched speaker profile available."),
+    };
+  });
 }
 
 function normalizeToneScores(input: Record<string, unknown>) {
@@ -279,15 +302,18 @@ router.post("/analyze", async (req, res) => {
       return;
     }
 
-    const { text, title = "Conversation Analysis" } = parsed.data;
+    const { text, title = "Conversation Analysis", partyNames } = parsed.data;
     const normalized = normalizeInput(text);
     const redacted = redactSensitiveData(normalized);
-    const parsedConversation = parseConversation(redacted.text);
+    const normalizedPartyNames = normalizePartyNames(partyNames);
+    const parsedConversation = parseConversation(redacted.text, normalizedPartyNames);
     const detectedSpeakers = [...new Set(parsedConversation.map((m) => m.speaker))];
 
     const prompt = `${SYSTEM_PROMPT}
 
 Analyze the following conversation.
+
+${normalizedPartyNames ? `The user provided these participant names: ${JSON.stringify(normalizedPartyNames)}. Use these exact names in every speaker reference. Do not invent placeholder names or rename either participant.` : ""}
 
 Parsed conversation:
 ${JSON.stringify(parsedConversation, null, 2)}

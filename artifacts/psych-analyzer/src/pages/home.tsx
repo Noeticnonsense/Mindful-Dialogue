@@ -17,6 +17,7 @@ const LOADING_MESSAGES = [
 export default function Home() {
   const [text, setText] = useState("");
   const [title, setTitle] = useState("");
+  const [partyNames, setPartyNames] = useState(["", ""]);
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
   const { toast } = useToast();
 
@@ -47,12 +48,18 @@ export default function Home() {
       toast({ title: "Input too short", description: "Please provide a longer conversation for meaningful analysis.", variant: "destructive" });
       return;
     }
-    analyze({ data: { text, title: title || undefined } });
+    const names = partyNames.map(name => name.trim());
+    if (names.some(name => !name)) {
+      toast({ title: "Add both participant names", description: "Enter a name for each person before analyzing the conversation.", variant: "destructive" });
+      return;
+    }
+    analyze({ data: { text, title: title || undefined, partyNames: names } });
   };
 
   const handleLoadSample = () => {
     setText(SAMPLE_CONVERSATION);
     setTitle("Sample: Argument over bills");
+    setPartyNames(["Alex", "Jordan"]);
   };
 
   // If there's an error, we fallback to the mock data to keep the UI demonstrable
@@ -125,6 +132,30 @@ export default function Home() {
                       placeholder="e.g. Chat with my partner..."
                       className="w-full px-4 py-3 rounded-xl bg-background border-2 border-border focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none text-foreground"
                     />
+                  </div>
+
+                  <div className="mb-6">
+                    <div className="mb-2">
+                      <label className="block text-sm font-semibold text-foreground">
+                        Who is in this conversation?
+                      </label>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Enter both names so unlabeled lines and analysis results use the right people.
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {partyNames.map((name, index) => (
+                        <input
+                          key={index}
+                          type="text"
+                          value={name}
+                          onChange={e => setPartyNames(current => current.map((currentName, currentIndex) => currentIndex === index ? e.target.value : currentName))}
+                          placeholder={index === 0 ? "e.g. Alex" : "e.g. Jordan"}
+                          aria-label={`Participant ${index + 1} name`}
+                          className="w-full px-4 py-3 rounded-xl bg-background border-2 border-border focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none text-foreground"
+                        />
+                      ))}
+                    </div>
                   </div>
 
                   <div className="mb-6">
