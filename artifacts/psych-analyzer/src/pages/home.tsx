@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, FileText, ArrowRight, Loader2 } from "lucide-react";
 import { useAnalyzeConversation } from "@workspace/api-client-react";
 import { AnalysisDashboard } from "@/components/analysis-dashboard";
-import { SAMPLE_CONVERSATION, FALLBACK_ANALYSIS } from "@/lib/mock-data";
+import { SAMPLE_CONVERSATION } from "@/lib/mock-data";
 import { useToast } from "@/hooks/use-toast";
 
 const LOADING_MESSAGES = [
@@ -21,14 +21,14 @@ export default function Home() {
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
   const { toast } = useToast();
 
-  const { mutate: analyze, isPending, data: analysisData, isError, error, reset } = useAnalyzeConversation({
+  const { mutate: analyze, isPending, data: analysisData, reset } = useAnalyzeConversation({
     mutation: {
       onError: (err) => {
         console.error("Analysis failed:", err);
         toast({
-          title: "API Error - Using Mock Data",
-          description: "The backend is unavailable. Displaying sample analysis for preview.",
-          variant: "default",
+          title: "Analysis failed",
+          description: "The conversation could not be analyzed. Please try again.",
+          variant: "destructive",
         });
       }
     }
@@ -62,8 +62,7 @@ export default function Home() {
     setPartyNames(["Alex", "Jordan"]);
   };
 
-  // If there's an error, we fallback to the mock data to keep the UI demonstrable
-  const activeData = isError ? FALLBACK_ANALYSIS : analysisData;
+  const activeData = analysisData;
 
   return (
     <div className="min-h-screen relative selection:bg-primary/20">
