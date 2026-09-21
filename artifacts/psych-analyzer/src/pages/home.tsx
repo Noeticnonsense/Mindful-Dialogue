@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, FileText, ArrowRight, Loader2 } from "lucide-react";
+import { Sparkles, FileText, ArrowRight, Loader2, Download, Share, X } from "lucide-react";
 import { useAnalyzeConversation } from "@workspace/api-client-react";
 import { AnalysisDashboard } from "@/components/analysis-dashboard";
 import { SAMPLE_CONVERSATION } from "@/lib/mock-data";
@@ -18,8 +18,16 @@ export default function Home() {
   const [text, setText] = useState("");
   const [title, setTitle] = useState("");
   const [partyNames, setPartyNames] = useState(["", ""]);
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
   const { toast } = useToast();
+  const navigatorWithStandalone = navigator as Navigator & { standalone?: boolean };
+  const isIos =
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const isStandalone =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    navigatorWithStandalone.standalone === true;
 
   const { mutate: analyze, isPending, data: analysisData, reset } = useAnalyzeConversation({
     mutation: {
@@ -79,7 +87,7 @@ export default function Home() {
 
       <div className="relative z-10">
         {/* Header */}
-        <header className="border-b bg-background/80 backdrop-blur-md sticky top-0 z-50">
+        <header className="app-header border-b bg-background/80 backdrop-blur-md sticky top-0 z-50">
           <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => reset()}>
               <div className="bg-primary text-primary-foreground p-1.5 rounded-lg shadow-sm">
@@ -88,14 +96,25 @@ export default function Home() {
               <h1 className="font-display font-bold text-xl tracking-tight text-foreground">PsychAnalyzer</h1>
             </div>
             
-            {activeData && (
-              <button 
-                onClick={() => reset()}
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                New Analysis
-              </button>
-            )}
+            <div className="flex items-center gap-3">
+              {isIos && !isStandalone && (
+                <button
+                  onClick={() => setShowInstallGuide(true)}
+                  className="text-sm font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1.5"
+                >
+                  <Download className="w-4 h-4" />
+                  Install
+                </button>
+              )}
+              {activeData && (
+                <button 
+                  onClick={() => reset()}
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  New Analysis
+                </button>
+              )}
+            </div>
           </div>
         </header>
 
@@ -240,6 +259,59 @@ export default function Home() {
           </AnimatePresence>
         </main>
       </div>
+
+      <AnimatePresence>
+        {showInstallGuide && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm flex items-end"
+            onClick={() => setShowInstallGuide(false)}
+          >
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="ios-install-guide w-full bg-background rounded-t-3xl p-6 shadow-2xl"
+              onClick={event => event.stopPropagation()}
+            >
+              <div className="max-w-md mx-auto">
+                <div className="flex items-start justify-between gap-4 mb-5">
+                  <div>
+                    <h2 className="text-xl font-display font-bold text-foreground">Install PsychAnalyzer</h2>
+                    <p className="text-sm text-muted-foreground mt-1">Add this app to your iPhone Home Screen.</p>
+                  </div>
+                  <button
+                    onClick={() => setShowInstallGuide(false)}
+                    className="p-2 rounded-full bg-secondary text-muted-foreground"
+                    aria-label="Close install instructions"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <ol className="space-y-4">
+                  <li className="flex gap-3 items-start">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold shrink-0">1</div>
+                    <p className="text-sm text-foreground pt-1.5">Open this app in <strong>Safari</strong>.</p>
+                  </li>
+                  <li className="flex gap-3 items-start">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <Share className="w-4 h-4" />
+                    </div>
+                    <p className="text-sm text-foreground pt-1.5">Tap the <strong>Share</strong> button at the bottom of Safari.</p>
+                  </li>
+                  <li className="flex gap-3 items-start">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold shrink-0">3</div>
+                    <p className="text-sm text-foreground pt-1.5">Choose <strong>Add to Home Screen</strong>, then tap <strong>Add</strong>.</p>
+                  </li>
+                </ol>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

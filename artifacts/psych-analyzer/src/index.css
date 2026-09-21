@@ -136,11 +136,21 @@
   }
   body {
     @apply font-sans antialiased bg-background text-foreground selection:bg-primary/20 selection:text-primary-foreground;
+    min-height: 100dvh;
+    padding-bottom: env(safe-area-inset-bottom);
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
     @apply tracking-tight;
   }
+}
+
+.app-header {
+  padding-top: env(safe-area-inset-top);
+}
+
+.ios-install-guide {
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
 }
 
 /* Custom Scrollbar for Chat Transcript */
